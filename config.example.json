@@ -1,4 +1,5 @@
 {
+  "dvrRoot": "/var/dvr",
   "segmentDuration": 4,
   "liveWindow": 6,
   "cleanupIntervalMinutes": 5,

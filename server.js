@@ -6,7 +6,12 @@ const { Worker } = require('worker_threads');
 
 const config = JSON.parse(fs.readFileSync('./config.json'));
 
-const DVR_ROOT = '/var/dvr';
+const DEFAULT_DVR_ROOT = '/var/dvr';
+const DVR_ROOT = (
+    typeof config.dvrRoot === 'string' && config.dvrRoot.trim()
+)
+    ? config.dvrRoot.trim()
+    : DEFAULT_DVR_ROOT;
 const SEGMENT_DURATION = config.segmentDuration;
 const LIVE_SEGMENTS = config.liveWindow;
 const CLEAN_INTERVAL = config.cleanupIntervalMinutes * 60 * 1000;
