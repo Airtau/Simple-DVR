@@ -262,7 +262,7 @@ function buildRecordingRanges(camera) {
     const segments = getSegments(camera);
 
     if (segments.length === 0) {
-	return res.status(404).send('No segments');
+        return null;
     }
     const ranges = [];
 
@@ -472,6 +472,9 @@ app.get('/:camera/recording_status.json', (req, res) => {
     }
 
     const ranges = buildRecordingRanges(camera);
+    if (ranges === null) {
+        return res.status(404).send('No segments');
+    }
 
     res.json([
         {
