@@ -8,13 +8,14 @@
       "name": "cam1",
       "rtsp": "rtsp://login:password@camera-host/stream",
       "retentionDays": 1,
-      "disableAudio": false
+      "audioArgs": ["-c:a", "aac", "-b:a", "96k"]
     },
     {
       "name": "cam2",
       "rtsp": "rtsp://login:password@camera-host/stream2",
       "retentionDays": 3,
-      "disableAudio": true
+      "audioArgs": ["-an"],
+      "ffmpegArgs": ["-max_interleave_delta", "0"]
     }
   ]
 }

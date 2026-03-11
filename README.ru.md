@@ -61,7 +61,11 @@ node server.js
 - `segmentDuration`: длительность HLS-сегмента (секунды)
 - `liveWindow`: размер live-окна (в сегментах)
 - `cleanupIntervalMinutes`: интервал запуска очистки
-- `cameras[]`: список камер (`name`, `rtsp`, `retentionDays`, `disableAudio`)
+- `cameras[]`: список камер (`name`, `rtsp`, `retentionDays`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs`)
+- `audioArgs`: аргументы аудио на камеру для ffmpeg (например `["-an"]` или `["-c:a","aac","-b:a","96k"]`)
+- `ffmpegInputArgs`: доп. входные аргументы для камеры, добавляются перед `-i`
+- `ffmpegArgs`: доп. выходные аргументы для камеры, добавляются перед итоговым путём плейлиста
+- `disableAudio`: устаревший fallback; если `audioArgs` не задан, то `true` -> `-an`, иначе аудио по умолчанию `-c:a copy`
 
 ## Примечания по systemd
 

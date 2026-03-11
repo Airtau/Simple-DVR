@@ -42,30 +42,45 @@ function ensureCameraDirs() {
     }
 }
 
+function getCameraArgsArray(camera, key) {
+    const value = camera[key];
+    if (value === undefined) return null;
+
+    if (!Array.isArray(value) || value.some(item => typeof item !== 'string' || item.trim() === '')) {
+        console.warn(`Camera ${camera.name}: "${key}" must be an array of non-empty strings. Ignoring.`);
+        return null;
+    }
+
+    return value.map(item => item.trim());
+}
+
 // ----------------------------------------
 // Start FFmpeg
 // ----------------------------------------
 function startFFmpeg(camera) {
 
     const outputDir = path.join(DVR_ROOT, camera.name);
+    const ffmpegInputArgs = getCameraArgsArray(camera, 'ffmpegInputArgs') || [];
+    const audioArgs = getCameraArgsArray(camera, 'audioArgs');
+    const ffmpegArgs = getCameraArgsArray(camera, 'ffmpegArgs') || [];
 
     const args = [
         '-rtsp_transport', 'tcp',
+        ...ffmpegInputArgs,
         '-i', camera.rtsp
     ];
-
-    // If audio is disabled in config
-    if (camera.disableAudio === true) {
-        args.push('-an');
-    }
 
     // Always copy video
     args.push(
         '-c:v', 'copy'
     );
 
-    // If audio is not disabled, copy it as-is
-    if (camera.disableAudio !== true) {
+    // Per-camera audio args override legacy disableAudio
+    if (audioArgs && audioArgs.length > 0) {
+        args.push(...audioArgs);
+    } else if (camera.disableAudio === true) {
+        args.push('-an');
+    } else {
         args.push('-c:a', 'copy');
     }
 
@@ -76,9 +91,10 @@ function startFFmpeg(camera) {
         '-hls_playlist_type', 'event',
         '-strftime', '1',
         '-strftime_mkdir', '1',
-        '-hls_segment_filename', `${outputDir}/%Y-%m-%d/%H/%Y%m%d_%H%M%S.m4s`,
-        `${outputDir}/index.m3u8`
+        '-hls_segment_filename', `${outputDir}/%Y-%m-%d/%H/%Y%m%d_%H%M%S.m4s`
     );
+    args.push(...ffmpegArgs);
+    args.push(`${outputDir}/index.m3u8`);
 
     console.log(`Starting ffmpeg for ${camera.name}`);
     console.log('Args:', args.join(' '));

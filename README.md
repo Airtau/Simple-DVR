@@ -61,7 +61,11 @@ Key parameters:
 - `segmentDuration`: HLS segment duration (seconds)
 - `liveWindow`: live window size (segments)
 - `cleanupIntervalMinutes`: cleanup interval
-- `cameras[]`: camera list (`name`, `rtsp`, `retentionDays`, `disableAudio`)
+- `cameras[]`: camera list (`name`, `rtsp`, `retentionDays`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs`)
+- `audioArgs`: per-camera audio args passed to ffmpeg (e.g. `["-an"]` or `["-c:a","aac","-b:a","96k"]`)
+- `ffmpegInputArgs`: extra input args inserted before `-i` for this camera
+- `ffmpegArgs`: extra output args inserted before final playlist path for this camera
+- `disableAudio`: legacy fallback; when `audioArgs` is not set: `true` -> `-an`, otherwise audio defaults to `-c:a copy`
 
 ## Systemd notes
 
