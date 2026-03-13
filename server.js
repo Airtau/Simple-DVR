@@ -54,20 +54,25 @@ function getCameraArgsArray(camera, key) {
     return value.map(item => item.trim());
 }
 
+function isRtspSource(source) {
+    return typeof source === 'string' && /^rtsps?:\/\//i.test(source.trim());
+}
+
 // ----------------------------------------
 // Start FFmpeg
 // ----------------------------------------
 function startFFmpeg(camera) {
 
     const outputDir = path.join(DVR_ROOT, camera.name);
+    const inputSource = typeof camera.rtsp === 'string' ? camera.rtsp.trim() : camera.rtsp;
     const ffmpegInputArgs = getCameraArgsArray(camera, 'ffmpegInputArgs') || [];
     const audioArgs = getCameraArgsArray(camera, 'audioArgs');
     const ffmpegArgs = getCameraArgsArray(camera, 'ffmpegArgs') || [];
 
     const args = [
-        '-rtsp_transport', 'tcp',
+        ...(isRtspSource(inputSource) ? ['-rtsp_transport', 'tcp'] : []),
         ...ffmpegInputArgs,
-        '-i', camera.rtsp
+        '-i', inputSource
     ];
 
     // Always copy video
