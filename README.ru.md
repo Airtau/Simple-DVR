@@ -2,7 +2,7 @@
 
 Легковесный DVR-сервис на Node.js + FFmpeg для:
 
-- live HLS-стриминга RTSP-камер;
+- live HLS-стриминга камер и других URL-источников видео;
 - просмотра архива по диапазону времени;
 - выгрузки архива в MP4;
 - автоматической очистки старых записей по `retentionDays`.
@@ -13,6 +13,7 @@
 
 - Запускает по одному `ffmpeg` процессу на каждую камеру из `config.json`.
 - Сохраняет сегменты в `/var/dvr/<camera>/YYYY-MM-DD/HH/*.m4s`.
+- Опционально зеркалит поток камеры в RTMP, сохраняя DVR-запись.
 - Отдает live и archive плейлисты по HTTP.
 - Генерирует минутные preview-ролики.
 - Запускает очистку в отдельном worker-потоке (`cleanup-worker.js`).
@@ -25,7 +26,7 @@
 cp config.example.json config.json
 ```
 
-2. Обновите RTSP URL и параметры камер в `config.json`.
+2. Обновите URL источников в поле `source` и параметры камер в `config.json`.
 
 3. Установите зависимости:
 
@@ -37,8 +38,10 @@ npm install express
 4. Запустите:
 
 ```bash
-node server.js
+sudo -u www-data -g www-data node server.js
 ```
+
+Если используется стандартный `/var/dvr`, это не даст создать DVR-файлы с владельцем `root:root`.
 
 ## Основные эндпоинты
 
@@ -50,7 +53,7 @@ node server.js
 - `GET /:camera/:yyyy/:mm/:dd/:HH/:MM/:SS-preview.mp4`
 - `GET /dvr/...` прямой доступ к DVR-файлам через nginx alias
 
-Полные детали API и развертывания: [INSTALL.md](./INSTALL.md).
+Полные детали API и развертывания: [INSTALL.ru.md](./INSTALL.ru.md).
 
 ## Конфигурация
 
@@ -58,14 +61,19 @@ node server.js
 
 Ключевые параметры:
 
+- `dvrRoot`: корневая директория хранения DVR (по умолчанию `/var/dvr`)
 - `segmentDuration`: длительность HLS-сегмента (секунды)
 - `liveWindow`: размер live-окна (в сегментах)
 - `cleanupIntervalMinutes`: интервал запуска очистки
-- `cameras[]`: список камер (`name`, `rtsp`, `retentionDays`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs`)
+- `cameras[]`: список камер (`name`, `source`, `retentionDays`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs`, `rtmpPushUrl`)
+- `source`: входной URL или путь к потоку камеры; legacy `rtsp` все еще поддерживается для обратной совместимости
 - `audioArgs`: аргументы аудио на камеру для ffmpeg (например `["-an"]` или `["-c:a","aac","-b:a","96k"]`)
-- `ffmpegInputArgs`: доп. входные аргументы для камеры, добавляются перед `-i`
+- `ffmpegInputArgs`: доп. входные аргументы для источника, добавляются перед `-i`
 - `ffmpegArgs`: доп. выходные аргументы для камеры, добавляются перед итоговым путём плейлиста
+- `rtmpPushUrl`: необязательный RTMP endpoint; если задан, тот же процесс ffmpeg пишет HLS DVR и параллельно пушит FLV/RTMP
 - `disableAudio`: устаревший fallback; если `audioArgs` не задан, то `true` -> `-an`, иначе аудио по умолчанию `-c:a copy`
+
+Полный пример публикации камеры в локальный SRS и выдачи потока через WebRTC WHEP см. в [INSTALL.ru.md](./INSTALL.ru.md).
 
 ## Примечания по systemd
 

@@ -58,16 +58,36 @@ function isRtspSource(source) {
     return typeof source === 'string' && /^rtsps?:\/\//i.test(source.trim());
 }
 
+function getCameraSource(camera) {
+    if (typeof camera.source === 'string' && camera.source.trim() !== '') {
+        return camera.source.trim();
+    }
+
+    if (typeof camera.rtsp === 'string' && camera.rtsp.trim() !== '') {
+        return camera.rtsp.trim();
+    }
+
+    return null;
+}
+
 // ----------------------------------------
 // Start FFmpeg
 // ----------------------------------------
 function startFFmpeg(camera) {
 
     const outputDir = path.join(DVR_ROOT, camera.name);
-    const inputSource = typeof camera.rtsp === 'string' ? camera.rtsp.trim() : camera.rtsp;
+    const inputSource = getCameraSource(camera);
     const ffmpegInputArgs = getCameraArgsArray(camera, 'ffmpegInputArgs') || [];
     const audioArgs = getCameraArgsArray(camera, 'audioArgs');
     const ffmpegArgs = getCameraArgsArray(camera, 'ffmpegArgs') || [];
+    const rtmpPushUrl = typeof camera.rtmpPushUrl === 'string' && camera.rtmpPushUrl.trim() !== ''
+        ? camera.rtmpPushUrl.trim()
+        : null;
+
+    if (!inputSource) {
+        console.error(`Camera ${camera.name}: "source" is required. Legacy "rtsp" is still supported.`);
+        return;
+    }
 
     const args = [
         ...(isRtspSource(inputSource) ? ['-rtsp_transport', 'tcp'] : []),
@@ -75,6 +95,7 @@ function startFFmpeg(camera) {
         '-i', inputSource
     ];
 
+    args.push('-map', '0:v:0');
     // Always copy video
     args.push(
         '-c:v', 'copy'
@@ -89,17 +110,28 @@ function startFFmpeg(camera) {
         args.push('-c:a', 'copy');
     }
 
-    args.push(
-        '-f', 'hls',
-        '-hls_time', SEGMENT_DURATION,
-        '-hls_segment_type', 'fmp4',
-        '-hls_playlist_type', 'event',
-        '-strftime', '1',
-        '-strftime_mkdir', '1',
-        '-hls_segment_filename', `${outputDir}/%Y-%m-%d/%H/%Y%m%d_%H%M%S.m4s`
-    );
-    args.push(...ffmpegArgs);
-    args.push(`${outputDir}/index.m3u8`);
+    if (rtmpPushUrl) {
+        // Single ingest, dual output: keep HLS DVR and push RTMP to local SRS
+        const teeOutputs = [
+            `[f=hls:onfail=ignore:hls_time=${SEGMENT_DURATION}:hls_segment_type=fmp4:hls_playlist_type=event:strftime=1:strftime_mkdir=1:hls_segment_filename=${outputDir}/%Y-%m-%d/%H/%Y%m%d_%H%M%S.m4s]${outputDir}/index.m3u8`,
+            `[f=flv:onfail=ignore]${rtmpPushUrl}`
+        ].join('|');
+
+        args.push(...ffmpegArgs);
+        args.push('-f', 'tee', teeOutputs);
+    } else {
+        args.push(
+            '-f', 'hls',
+            '-hls_time', SEGMENT_DURATION,
+            '-hls_segment_type', 'fmp4',
+            '-hls_playlist_type', 'event',
+            '-strftime', '1',
+            '-strftime_mkdir', '1',
+            '-hls_segment_filename', `${outputDir}/%Y-%m-%d/%H/%Y%m%d_%H%M%S.m4s`
+        );
+        args.push(...ffmpegArgs);
+        args.push(`${outputDir}/index.m3u8`);
+    }
 
     console.log(`Starting ffmpeg for ${camera.name}`);
     console.log('Args:', args.join(' '));
@@ -410,20 +442,20 @@ app.get([
 
     if (req.params.timestamp && req.params.duration) {
 
-	const unix = parseInt(req.params.timestamp);
-	const dur = parseInt(req.params.duration);
+    const unix = parseInt(req.params.timestamp);
+    const dur = parseInt(req.params.duration);
 
-	if (isNaN(unix) || isNaN(dur)) {
-    	    return res.status(400).send('Invalid timestamp');
-	}
+    if (isNaN(unix) || isNaN(dur)) {
+	    return res.status(400).send('Invalid timestamp');
+    }
 
-	start = new Date(unix * 1000);
-	end = new Date((unix + dur) * 1000);
+    start = new Date(unix * 1000);
+    end = new Date((unix + dur) * 1000);
     } else if (!req.query.start || !req.query.end) {
         return res.status(400).send('start and end required');
     } else {
-	start = new Date(req.query.start);
-	end = new Date(req.query.end);
+    start = new Date(req.query.start);
+    end = new Date(req.query.end);
     }
 
     const selected = selectSegments(camera, start, end);

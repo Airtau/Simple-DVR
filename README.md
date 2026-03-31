@@ -2,7 +2,7 @@
 
 A lightweight DVR service built with Node.js + FFmpeg for:
 
-- live HLS streaming from RTSP cameras;
+- live HLS streaming from cameras and other video source URLs;
 - archive playback by time range;
 - MP4 archive export;
 - automatic retention cleanup using `retentionDays`.
@@ -13,6 +13,7 @@ Repository: `https://github.com/rosteleset/Simple-DVR.git`
 
 - Starts one `ffmpeg` process per camera from `config.json`.
 - Stores segments in `/var/dvr/<camera>/YYYY-MM-DD/HH/*.m4s`.
+- Optionally mirrors a camera stream to RTMP while keeping DVR recording enabled.
 - Serves live and archive playlists over HTTP.
 - Generates minute preview clips.
 - Runs cleanup in a dedicated worker thread (`cleanup-worker.js`).
@@ -25,7 +26,7 @@ Repository: `https://github.com/rosteleset/Simple-DVR.git`
 cp config.example.json config.json
 ```
 
-2. Update RTSP URLs and camera settings in `config.json`.
+2. Update `source` URLs and camera settings in `config.json`.
 
 3. Install dependencies:
 
@@ -37,8 +38,10 @@ npm install express
 4. Run:
 
 ```bash
-node server.js
+sudo -u www-data -g www-data node server.js
 ```
+
+If you use the default `/var/dvr`, this avoids creating DVR files as `root:root`.
 
 ## Main endpoints
 
@@ -58,14 +61,19 @@ See [config.example.json](./config.example.json).
 
 Key parameters:
 
+- `dvrRoot`: DVR storage root directory (defaults to `/var/dvr`)
 - `segmentDuration`: HLS segment duration (seconds)
 - `liveWindow`: live window size (segments)
 - `cleanupIntervalMinutes`: cleanup interval
-- `cameras[]`: camera list (`name`, `rtsp`, `retentionDays`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs`)
+- `cameras[]`: camera list (`name`, `source`, `retentionDays`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs`, `rtmpPushUrl`)
+- `source`: input URL or path for the camera stream; legacy `rtsp` is still accepted for backward compatibility
 - `audioArgs`: per-camera audio args passed to ffmpeg (e.g. `["-an"]` or `["-c:a","aac","-b:a","96k"]`)
-- `ffmpegInputArgs`: extra input args inserted before `-i` for this camera
+- `ffmpegInputArgs`: extra input args inserted before `-i` for this source
 - `ffmpegArgs`: extra output args inserted before final playlist path for this camera
+- `rtmpPushUrl`: optional RTMP endpoint; when set, the same ffmpeg process writes HLS DVR and pushes FLV/RTMP in parallel
 - `disableAudio`: legacy fallback; when `audioArgs` is not set: `true` -> `-an`, otherwise audio defaults to `-c:a copy`
+
+For a complete example of publishing a camera to local SRS and exposing it via WebRTC WHEP, see [INSTALL.md](./INSTALL.md).
 
 ## Systemd notes
 

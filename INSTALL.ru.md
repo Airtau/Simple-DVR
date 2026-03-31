@@ -37,18 +37,50 @@ cp config.example.json config.json
 
 ```json
 {
+  "dvrRoot": "/var/dvr",
   "segmentDuration": 4,
   "liveWindow": 6,
   "cleanupIntervalMinutes": 5,
   "cameras": [
     {
       "name": "cam1",
-      "rtsp": "rtsp://login:password@camera-host/stream",
+      "source": "rtsp://login:password@camera-host/stream",
       "retentionDays": 1
     }
   ]
 }
 ```
+
+Расширенные параметры камеры показаны в `config.example.json`: `source`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs` и `rtmpPushUrl` для параллельного RTMP-пуша.
+
+### Пример: публикация камеры в локальный SRS для WebRTC
+
+Если у вас локально запущен SRS, можно параллельно публиковать поток камеры в `rtmp://127.0.0.1/live/<stream>` и при этом продолжать запись DVR.
+
+В новых конфигах используйте `source`. Legacy `rtsp` все еще поддерживается для обратной совместимости, а не-RTSP источники вроде `https://.../video1.ts` тоже работают.
+
+Пример:
+
+```json
+{
+  "dvrRoot": "/var/dvr",
+  "segmentDuration": 4,
+  "liveWindow": 6,
+  "cleanupIntervalMinutes": 5,
+  "cameras": [
+    {
+      "name": "example-cam",
+      "source": "https://camera-source.invalid/example-cam/video1.ts",
+      "rtmpPushUrl": "rtmp://127.0.0.1/live/example-cam",
+      "ffmpegArgs": ["-bsf:v", "dump_extra", "-tag:v", "7", "-max_interleave_delta", "0"],
+      "retentionDays": 1,
+      "audioArgs": ["-an"]
+    }
+  ]
+}
+```
+
+В этом режиме сервис продолжает писать DVR-сегменты в `/var/dvr/example-cam/...` и одновременно публикует поток в локальный SRS как `live/example-cam`.
 
 ## 4. Директория хранения DVR
 
@@ -64,9 +96,11 @@ sudo chmod -R 755 /var/dvr
 
 ## 5. Тестовый запуск
 
+Запускайте тестовый старт от того же пользователя и группы, что и сервис. Иначе файлы в `/var/dvr` могут создаться с владельцем `root:root`, и потом запуск через systemd от `www-data:www-data` сломается.
+
 ```bash
 cd /opt/simple-dvr
-node server.js
+sudo -u www-data -g www-data node server.js
 ```
 
 Проверьте:
@@ -91,6 +125,87 @@ sudo systemctl reload nginx
 
 - HTTP: `8080`
 - HTTPS: `8443` (нужны корректные пути `ssl_certificate` и `ssl_certificate_key`)
+
+### Пример: WHEP endpoint для WebRTC через SRS
+
+Предположения:
+
+- SRS принимает RTMP publish на `rtmp://127.0.0.1/live/<stream>`
+- HTTP API SRS слушает `127.0.0.1:1985`
+- nginx завершает TLS на `8443`
+
+Можно расширить HTTPS server block так:
+
+```nginx
+server {
+
+    listen 8443 ssl http2 default_server;
+
+    ssl_certificate /etc/ssl/cert.pem;
+    ssl_certificate_key /etc/ssl/key.pem;
+
+    client_max_body_size 100M;
+
+    location /dvr/ {
+        alias /var/dvr/;
+
+        types {
+            application/vnd.apple.mpegurl m3u8;
+            video/mp4 mp4 m4s;
+        }
+        access_log off;
+        add_header Cache-Control no-cache;
+    }
+
+    location ~ ^/(?<cam>[A-Za-z0-9_-]+)/whep$ {
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin "*" always;
+            add_header Access-Control-Allow-Methods "POST, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+
+        if ($request_method != POST) { return 405; }
+
+        rewrite ^/(?<cam>[A-Za-z0-9_-]+)/whep$ /rtc/v1/play/?app=live&stream=$cam break;
+        proxy_pass http://127.0.0.1:1985;
+        proxy_http_version 1.1;
+        proxy_set_header Host 127.0.0.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # чтобы не было дублирования CORS, например "*, *"
+        proxy_hide_header Access-Control-Allow-Origin;
+        proxy_hide_header Access-Control-Allow-Methods;
+        proxy_hide_header Access-Control-Allow-Headers;
+
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        add_header Cache-Control no-cache;
+    }
+}
+```
+
+Для примера конфига выше WHEP endpoint будет таким:
+
+```text
+https://<SERVER_IP>:8443/example-cam/whep
+```
+
+После изменения nginx-конфига:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
 ## 7. Сервис systemd
 

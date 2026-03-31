@@ -6,16 +6,17 @@
   "cameras": [
     {
       "name": "cam1",
-      "rtsp": "rtsp://login:password@camera-host/stream",
+      "source": "rtsp://login:password@camera-host/stream",
       "retentionDays": 1,
       "audioArgs": ["-c:a", "aac", "-b:a", "96k"]
     },
     {
       "name": "cam2",
-      "rtsp": "rtsp://login:password@camera-host/stream2",
+      "source": "rtsp://login:password@camera-host/stream2",
       "retentionDays": 3,
       "audioArgs": ["-an"],
-      "ffmpegArgs": ["-max_interleave_delta", "0"]
+      "ffmpegArgs": ["-max_interleave_delta", "0"],
+      "rtmpPushUrl": "rtmp://127.0.0.1/live/cam2"
     }
   ]
 }
