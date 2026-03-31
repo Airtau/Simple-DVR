@@ -53,6 +53,8 @@ Example config:
 
 Advanced per-camera options are shown in `config.example.json`: `source`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs`, and `rtmpPushUrl` for parallel RTMP push.
 
+For a full end-to-end setup of `Simple-DVR + SRS + nginx` with WebRTC/WHEP, validation and troubleshooting, see [WEBRTC-SRS-HOWTO.md](./WEBRTC-SRS-HOWTO.md).
+
 ### Example: publish a camera to local SRS for WebRTC
 
 If you run SRS locally, you can push the same camera stream to `rtmp://127.0.0.1/live/<stream>` and keep DVR recording enabled at the same time.

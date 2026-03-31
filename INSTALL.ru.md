@@ -53,6 +53,8 @@ cp config.example.json config.json
 
 Расширенные параметры камеры показаны в `config.example.json`: `source`, `audioArgs`, `ffmpegInputArgs`, `ffmpegArgs` и `rtmpPushUrl` для параллельного RTMP-пуша.
 
+Полный howto по связке `Simple-DVR + SRS + nginx` с WebRTC/WHEP, проверками и типовыми ошибками: [WEBRTC-SRS-HOWTO.ru.md](./WEBRTC-SRS-HOWTO.ru.md).
+
 ### Пример: публикация камеры в локальный SRS для WebRTC
 
 Если у вас локально запущен SRS, можно параллельно публиковать поток камеры в `rtmp://127.0.0.1/live/<stream>` и при этом продолжать запись DVR.

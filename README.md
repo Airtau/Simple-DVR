@@ -55,6 +55,8 @@ If you use the default `/var/dvr`, this avoids creating DVR files as `root:root`
 
 For full API and deployment details, see [INSTALL.md](./INSTALL.md).
 
+For a complete production setup of `Simple-DVR + SRS + nginx` with WebRTC/WHEP, see [WEBRTC-SRS-HOWTO.md](./WEBRTC-SRS-HOWTO.md).
+
 ## Configuration
 
 See [config.example.json](./config.example.json).
@@ -73,7 +75,7 @@ Key parameters:
 - `rtmpPushUrl`: optional RTMP endpoint; when used for SRS/WebRTC, the matching `ffmpegArgs` are required, not optional tuning
 - `disableAudio`: legacy fallback; when `audioArgs` is not set: `true` -> `-an`, otherwise audio defaults to `-c:a copy`
 
-For a complete example of publishing a camera to local SRS and exposing it via WebRTC WHEP, see [INSTALL.md](./INSTALL.md).
+For a complete example of publishing a camera to local SRS and exposing it via WebRTC WHEP, see [WEBRTC-SRS-HOWTO.md](./WEBRTC-SRS-HOWTO.md).
 
 ## Systemd notes
 

@@ -55,6 +55,8 @@ sudo -u www-data -g www-data node server.js
 
 Полные детали API и развертывания: [INSTALL.ru.md](./INSTALL.ru.md).
 
+Полный howto по связке `Simple-DVR + SRS + nginx` с WebRTC/WHEP: [WEBRTC-SRS-HOWTO.ru.md](./WEBRTC-SRS-HOWTO.ru.md).
+
 ## Конфигурация
 
 См. [config.example.json](./config.example.json).
@@ -73,7 +75,7 @@ sudo -u www-data -g www-data node server.js
 - `rtmpPushUrl`: необязательный RTMP endpoint; если используется для SRS/WebRTC, соответствующие `ffmpegArgs` обязательны и не являются просто тюнингом
 - `disableAudio`: устаревший fallback; если `audioArgs` не задан, то `true` -> `-an`, иначе аудио по умолчанию `-c:a copy`
 
-Полный пример публикации камеры в локальный SRS и выдачи потока через WebRTC WHEP см. в [INSTALL.ru.md](./INSTALL.ru.md).
+Полный пример публикации камеры в локальный SRS и выдачи потока через WebRTC WHEP см. в [WEBRTC-SRS-HOWTO.ru.md](./WEBRTC-SRS-HOWTO.ru.md).
 
 ## Примечания по systemd
 
