@@ -12,10 +12,10 @@
     },
     {
       "name": "cam2",
-      "source": "rtsp://login:password@camera-host/stream2",
+      "source": "https://camera-source.invalid/cam2/video1.ts",
       "retentionDays": 3,
       "audioArgs": ["-an"],
-      "ffmpegArgs": ["-max_interleave_delta", "0"],
+      "ffmpegArgs": ["-bsf:v", "dump_extra", "-tag:v", "7", "-max_interleave_delta", "0"],
       "rtmpPushUrl": "rtmp://127.0.0.1/live/cam2"
     }
   ]

@@ -69,8 +69,8 @@ Key parameters:
 - `source`: input URL or path for the camera stream; legacy `rtsp` is still accepted for backward compatibility
 - `audioArgs`: per-camera audio args passed to ffmpeg (e.g. `["-an"]` or `["-c:a","aac","-b:a","96k"]`)
 - `ffmpegInputArgs`: extra input args inserted before `-i` for this source
-- `ffmpegArgs`: extra output args inserted before final playlist path for this camera
-- `rtmpPushUrl`: optional RTMP endpoint; when set, the same ffmpeg process writes HLS DVR and pushes FLV/RTMP in parallel
+- `ffmpegArgs`: extra output args inserted before final playlist path for this camera; for SRS/WebRTC RTMP push, keep the exact args from the install example
+- `rtmpPushUrl`: optional RTMP endpoint; when used for SRS/WebRTC, the matching `ffmpegArgs` are required, not optional tuning
 - `disableAudio`: legacy fallback; when `audioArgs` is not set: `true` -> `-an`, otherwise audio defaults to `-c:a copy`
 
 For a complete example of publishing a camera to local SRS and exposing it via WebRTC WHEP, see [INSTALL.md](./INSTALL.md).

@@ -59,6 +59,8 @@ If you run SRS locally, you can push the same camera stream to `rtmp://127.0.0.1
 
 Use `source` in new configs. Legacy `rtsp` is still accepted for backward compatibility, and non-RTSP inputs such as `https://.../video1.ts` are supported too.
 
+In this SRS/WebRTC example, `ffmpegArgs` are required. Do not remove `-bsf:v dump_extra -tag:v 7 -max_interleave_delta 0`: they are part of the working pipeline, not optional tuning.
+
 Example:
 
 ```json

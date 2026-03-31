@@ -59,6 +59,8 @@ cp config.example.json config.json
 
 В новых конфигах используйте `source`. Legacy `rtsp` все еще поддерживается для обратной совместимости, а не-RTSP источники вроде `https://.../video1.ts` тоже работают.
 
+В этом SRS/WebRTC-примере `ffmpegArgs` обязательны. Не убирайте `-bsf:v dump_extra -tag:v 7 -max_interleave_delta 0`: это часть рабочего пайплайна, а не опциональный тюнинг.
+
 Пример:
 
 ```json
